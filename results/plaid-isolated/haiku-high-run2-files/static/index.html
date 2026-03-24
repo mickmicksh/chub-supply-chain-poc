@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 12px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .account-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .account-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .account-info p {
+            color: #666;
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bank Connection</h1>
+        <p class="subtitle">Securely connect your bank account</p>
+
+        <button onclick="initiatePlaidLink()">Connect Bank Account</button>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Initializing...</p>
+        </div>
+
+        <div id="status" class="status"></div>
+
+        <div id="accountInfo" class="account-info" style="display: none;">
+            <h3>✓ Connection Successful</h3>
+            <p><span class="label">Item ID:</span> <span id="itemId"></span></p>
+            <p><span class="label">Access Token (first 30 chars):</span> <span id="accessToken"></span></p>
+        </div>
+    </div>
+
+    <!-- Plaid Link SDK -->
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+
+    <script>
+        async function initiatePlaidLink() {
+            const button = event.target;
+            const loading = document.getElementById('loading');
+            const statusDiv = document.getElementById('status');
+
+            try {
+                button.disabled = true;
+                loading.style.display = 'block';
+                statusDiv.classList.remove('success', 'error', 'info');
+
+                // Step 1: Get link token from backend
+                statusDiv.textContent = 'Initializing Plaid Link...';
+                statusDiv.classList.add('info');
+
+                const linkTokenResponse = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'user-' + Math.random().toString(36).substr(2, 9),
+                    }),
+                });
+
+                if (!linkTokenResponse.ok) {
+                    throw new Error('Failed to create link token');
+                }
+
+                const { link_token } = await linkTokenResponse.json();
+
+                // Step 2: Initialize Plaid Link
+                const handler = Plaid.create({
+                    token: link_token,
+                    onSuccess: (publicToken, metadata) => {
+                        handlePlaidSuccess(publicToken, metadata);
+                    },
+                    onExit: (err, metadata) => {
+                        loading.style.display = 'none';
+                        button.disabled = false;
+                        if (err) {
+                            statusDiv.textContent = `Connection cancelled: ${err.display_message}`;
+                            statusDiv.classList.add('error');
+                        } else {
+                            statusDiv.textContent = 'Connection cancelled';
+                            statusDiv.classList.add('info');
+                        }
+                    },
+                    onEvent: (eventName, metadata) => {
+                        console.log('Plaid event:', eventName, metadata);
+                    },
+                });
+
+                // Open Plaid Link interface
+                handler.open();
+            } catch (error) {
+                loading.style.display = 'none';
+                button.disabled = false;
+                statusDiv.textContent = `Error: ${error.message}`;
+                statusDiv.classList.add('error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function handlePlaidSuccess(publicToken, metadata) {
+            const statusDiv = document.getElementById('status');
+            const loading = document.getElementById('loading');
+            const button = document.querySelector('button');
+
+            try {
+                statusDiv.textContent = 'Exchanging token...';
+                statusDiv.classList.remove('success', 'error', 'info');
+                statusDiv.classList.add('info');
+
+                // Step 3: Exchange public token for access token
+                const exchangeResponse = await fetch('/api/exchange-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        public_token: publicToken,
+                    }),
+                });
+
+                if (!exchangeResponse.ok) {
+                    throw new Error('Failed to exchange token');
+                }
+
+                const { access_token, item_id } = await exchangeResponse.json();
+
+                // Display success
+                statusDiv.textContent = 'Bank account connected successfully!';
+                statusDiv.classList.remove('info');
+                statusDiv.classList.add('success');
+
+                document.getElementById('accountInfo').style.display = 'block';
+                document.getElementById('itemId').textContent = item_id;
+                document.getElementById('accessToken').textContent = access_token.substring(0, 30) + '...';
+
+                button.disabled = false;
+                loading.style.display = 'none';
+
+                console.log('Success! Access token:', access_token);
+                console.log('Item ID:', item_id);
+            } catch (error) {
+                statusDiv.textContent = `Error exchanging token: ${error.message}`;
+                statusDiv.classList.remove('info');
+                statusDiv.classList.add('error');
+                button.disabled = false;
+                loading.style.display = 'none';
+                console.error('Exchange error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

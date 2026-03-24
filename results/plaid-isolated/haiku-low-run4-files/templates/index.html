@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: #5469d4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #423c99;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        #token-display {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-size: 12px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Plaid Link Integration</h1>
+
+        <div class="section">
+            <h2>Step 1: Connect Your Bank Account</h2>
+            <p>Click the button below to open Plaid Link and connect your bank account.</p>
+            <button id="open-plaid" onclick="openPlaidLink()">Connect Bank Account</button>
+            <div id="plaid-status" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>Step 2: Token Exchange</h2>
+            <p>After connecting, the access token will be displayed below:</p>
+            <button id="exchange-button" onclick="exchangeToken()" disabled>Exchange Token</button>
+            <div id="exchange-status" class="status"></div>
+            <div id="token-display"></div>
+        </div>
+
+        <div class="section">
+            <h2>Account Information</h2>
+            <div id="account-info"></div>
+        </div>
+    </div>
+
+    <script>
+        let publicToken = null;
+        let linkToken = null;
+        let accessToken = null;
+
+        async function openPlaidLink() {
+            try {
+                // Get link token from backend
+                const statusEl = document.getElementById('plaid-status');
+                statusEl.className = 'status info';
+                statusEl.textContent = 'Requesting link token...';
+
+                const response = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: 'user-' + Date.now() }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create link token');
+                }
+
+                const data = await response.json();
+                linkToken = data.link_token;
+
+                // Open Plaid Link
+                const handler = Plaid.create({
+                    token: linkToken,
+                    onSuccess: (publicTokenData, metadata) => {
+                        publicToken = publicTokenData.public_token;
+                        statusEl.className = 'status success';
+                        statusEl.textContent = '✓ Bank account connected successfully!';
+                        document.getElementById('exchange-button').disabled = false;
+                    },
+                    onExit: (err, metadata) => {
+                        if (err) {
+                            statusEl.className = 'status error';
+                            statusEl.textContent = '✗ Error: ' + (err.error_message || err.message);
+                        }
+                    },
+                });
+
+                handler.open();
+            } catch (error) {
+                const statusEl = document.getElementById('plaid-status');
+                statusEl.className = 'status error';
+                statusEl.textContent = '✗ Error: ' + error.message;
+            }
+        }
+
+        async function exchangeToken() {
+            try {
+                if (!publicToken) {
+                    throw new Error('Public token not available');
+                }
+
+                const statusEl = document.getElementById('exchange-status');
+                statusEl.className = 'status info';
+                statusEl.textContent = 'Exchanging token...';
+
+                const response = await fetch('/api/exchange-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ public_token: publicToken }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to exchange token');
+                }
+
+                const data = await response.json();
+                accessToken = data.access_token;
+
+                statusEl.className = 'status success';
+                statusEl.textContent = '✓ Token exchanged successfully!';
+
+                document.getElementById('token-display').textContent =
+                    'Access Token: ' + accessToken + '\nItem ID: ' + data.item_id;
+            } catch (error) {
+                const statusEl = document.getElementById('exchange-status');
+                statusEl.className = 'status error';
+                statusEl.textContent = '✗ Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Checkout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .product-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .product-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .price {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .price::before {
+            content: "$";
+            font-size: 24px;
+            margin-right: 5px;
+        }
+
+        .checkout-button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .checkout-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .checkout-button:active {
+            transform: translateY(0);
+        }
+
+        .test-cards {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .test-cards h3 {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .test-card {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+            font-family: monospace;
+        }
+
+        .test-card strong {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Premium Plan</h1>
+        <p class="description">Get instant access to all premium features</p>
+
+        <div class="product-section">
+            <div class="product-name">Premium Plan</div>
+            <div class="product-description">Access to all premium features including priority support, advanced analytics, and custom integrations.</div>
+            <div class="price">20.00</div>
+        </div>
+
+        <form action="/create-checkout-session" method="POST">
+            <button type="submit" class="checkout-button">
+                Checkout
+            </button>
+        </form>
+
+        <div class="test-cards">
+            <h3>Test Cards</h3>
+            <div class="test-card"><strong>4242424242424242</strong> - Success</div>
+            <div class="test-card"><strong>4000000000000002</strong> - Decline</div>
+            <div class="test-card"><strong>4000002500003155</strong> - 3D Secure</div>
+        </div>
+    </div>
+</body>
+</html>

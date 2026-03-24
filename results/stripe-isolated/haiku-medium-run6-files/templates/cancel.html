@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        .cancel-icon {
+            width: 80px;
+            height: 80px;
+            background: #ff9800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            font-size: 50px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .message {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .info {
+            background: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #ff9800;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .secondary:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cancel-icon">✕</div>
+        <h1>Payment Cancelled</h1>
+        <p class="message">
+            Your payment has been cancelled. No charges have been made to your card.
+        </p>
+
+        <div class="info">
+            <strong>What next?</strong> You can return to checkout and try again whenever you're ready.
+        </div>
+
+        <div class="button-group">
+            <button class="primary" onclick="window.location.href='/'">
+                Try Again
+            </button>
+            <button class="secondary" onclick="window.history.back()">
+                Go Back
+            </button>
+        </div>
+    </div>
+</body>
+</html>

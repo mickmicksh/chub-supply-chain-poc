@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            display: block;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .token-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            display: none;
+        }
+
+        .token-display.show {
+            display: block;
+        }
+
+        .token-display h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .token-display code {
+            background: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            display: block;
+            word-break: break-all;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bank Account Connection</h1>
+
+        <div class="button-group">
+            <button id="openPlaidButton">Connect Bank Account</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <div id="tokenDisplay" class="token-display">
+            <h3>Access Token:</h3>
+            <code id="accessToken"></code>
+            <h3>Item ID:</h3>
+            <code id="itemId"></code>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:5000';
+
+        // Initialize Plaid Link
+        async function openPlaidLink() {
+            try {
+                showStatus('info', 'Creating link token...');
+
+                // Step 1: Create a link token
+                const linkTokenResponse = await fetch(`${API_BASE}/api/create-link-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'user-' + Date.now() // Generate unique user ID
+                    })
+                });
+
+                if (!linkTokenResponse.ok) {
+                    throw new Error('Failed to create link token');
+                }
+
+                const { link_token } = await linkTokenResponse.json();
+                showStatus('info', 'Opening Plaid Link...');
+
+                // Step 2: Create Plaid Link handler
+                const handler = Plaid.create({
+                    token: link_token,
+                    onSuccess: handlePlaidSuccess,
+                    onExit: handlePlaidExit,
+                    onEvent: handlePlaidEvent,
+                });
+
+                // Step 3: Open Plaid Link
+                handler.open();
+
+            } catch (error) {
+                showStatus('error', `Error: ${error.message}`);
+                console.error('Plaid Link error:', error);
+            }
+        }
+
+        // Handle successful link completion
+        async function handlePlaidSuccess(publicToken, metadata) {
+            try {
+                showStatus('info', 'Exchanging token...');
+
+                // Step 3: Exchange public token for access token
+                const exchangeResponse = await fetch(`${API_BASE}/api/exchange-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        public_token: publicToken
+                    })
+                });
+
+                if (!exchangeResponse.ok) {
+                    throw new Error('Failed to exchange token');
+                }
+
+                const { access_token, item_id } = await exchangeResponse.json();
+
+                // Store tokens securely (in production, send to your backend)
+                displayTokens(access_token, item_id);
+                showStatus('success', 'Bank account connected successfully!');
+
+            } catch (error) {
+                showStatus('error', `Exchange error: ${error.message}`);
+                console.error('Token exchange error:', error);
+            }
+        }
+
+        // Handle Plaid Link exit
+        function handlePlaidExit(error, metadata) {
+            if (error) {
+                showStatus('error', `Link closed: ${error.display_message || error.message}`);
+            } else {
+                showStatus('info', 'Link closed by user');
+            }
+        }
+
+        // Handle Plaid Link events
+        function handlePlaidEvent(eventName, metadata) {
+            console.log('Plaid event:', eventName, metadata);
+        }
+
+        // Display tokens (for demo only - send to secure backend in production)
+        function displayTokens(accessToken, itemId) {
+            document.getElementById('accessToken').textContent = accessToken;
+            document.getElementById('itemId').textContent = itemId;
+            document.getElementById('tokenDisplay').classList.add('show');
+        }
+
+        // Show status message
+        function showStatus(type, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        // Event listeners
+        document.getElementById('openPlaidButton').addEventListener('click', openPlaidLink);
+    </script>
+</body>
+</html>

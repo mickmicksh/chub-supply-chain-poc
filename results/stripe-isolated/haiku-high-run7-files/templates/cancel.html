@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .cancel-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        h1 {
+            color: #ef4444;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .message {
+            color: #666;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .secondary-btn {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .secondary-btn:hover {
+            background: #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cancel-icon">✕</div>
+        <h1>Payment Cancelled</h1>
+        <p class="subtitle">Your payment was not completed.</p>
+
+        <p class="message">
+            No charges have been made to your account. You can try again or contact support if you need assistance.
+        </p>
+
+        <div class="action-buttons">
+            <a href="/" class="button primary-btn">Try Again</a>
+            <a href="mailto:support@example.com" class="button secondary-btn">Contact Support</a>
+        </div>
+    </div>
+</body>
+</html>

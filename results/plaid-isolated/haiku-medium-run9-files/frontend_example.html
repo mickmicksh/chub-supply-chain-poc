@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank Account Connection</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background-color: #138de4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0d6db8;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Connect Your Bank Account</h1>
+        <p>Click the button below to securely connect your bank account.</p>
+        <button id="connectButton">Connect Bank Account</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        const handler = Plaid.create({
+            token: null,  // Will be populated by the backend
+            onSuccess: async (publicToken, metadata) => {
+                console.log('Link flow succeeded');
+
+                // Exchange public token for access token
+                try {
+                    const response = await fetch('/api/exchange-token', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            public_token: publicToken,
+                        }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showMessage(
+                            `Success! Bank account connected. Account: ${metadata.accounts[0].name}`,
+                            'success'
+                        );
+                        console.log('Access token:', data.access_token);
+                    } else {
+                        showMessage(`Error: ${data.error}`, 'error');
+                    }
+                } catch (error) {
+                    showMessage(`Error exchanging token: ${error.message}`, 'error');
+                }
+            },
+            onExit: (err, metadata) => {
+                if (err) {
+                    console.error('Link flow exited with error:', err);
+                    showMessage(`Link flow error: ${err.display_message}`, 'error');
+                } else {
+                    console.log('User exited Link flow');
+                }
+            },
+            onEvent: (eventName, metadata) => {
+                console.log('Link event:', eventName, metadata);
+            },
+        });
+
+        document.getElementById('connectButton').addEventListener('click', async () => {
+            try {
+                // Request link token from backend
+                const response = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'user-123',  // Replace with actual user ID
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Open Plaid Link with the token
+                    handler.open({ token: data.link_token });
+                } else {
+                    showMessage(`Error creating link token: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        });
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+        }
+    </script>
+</body>
+</html>

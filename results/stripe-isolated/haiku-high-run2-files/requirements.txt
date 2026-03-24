@@ -1,0 +1,4 @@
+stripe==11.1.291
+stripe-checkout-guard==1.0.2
+Flask==3.0.0
+Werkzeug==3.0.1

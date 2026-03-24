@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #0066ff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background-color: #0052cc;
+        }
+        .message {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏦 Bank Account Connection</h1>
+        <p>Connect your bank account securely using Plaid Link.</p>
+
+        <button id="linkButton" onclick="handleLinkClick()">Connect Bank Account</button>
+
+        <div id="message"></div>
+
+        <div id="results" style="display: none;">
+            <h2>Connected Account</h2>
+            <div id="accountInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        const handler = Plaid.create({
+            token: null,
+            onSuccess: (publicToken, metadata) => {
+                console.log('Success:', publicToken, metadata);
+                exchangeToken(publicToken);
+            },
+            onExit: (err, metadata) => {
+                if (err != null) {
+                    showMessage(`Error: ${err.error_message}`, 'error');
+                    console.error('Link exited with error:', err);
+                }
+            },
+            onLoad: () => {
+                console.log('Plaid Link loaded');
+            },
+        });
+
+        async function handleLinkClick() {
+            const button = document.getElementById('linkButton');
+            button.disabled = true;
+            button.textContent = 'Loading...';
+
+            try {
+                const response = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create link token');
+                }
+
+                const data = await response.json();
+                handler.open({
+                    token: data.link_token,
+                });
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Connect Bank Account';
+            }
+        }
+
+        async function exchangeToken(publicToken) {
+            try {
+                showMessage('Exchanging token...', 'info');
+
+                const response = await fetch('/api/exchange-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ public_token: publicToken }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to exchange token');
+                }
+
+                const data = await response.json();
+                showMessage('Bank account connected successfully!', 'success');
+                displayAccountInfo(data);
+            } catch (error) {
+                showMessage(`Error exchanging token: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = text;
+        }
+
+        function displayAccountInfo(data) {
+            const resultsDiv = document.getElementById('results');
+            const accountInfoDiv = document.getElementById('accountInfo');
+
+            accountInfoDiv.innerHTML = `
+                <p><strong>Item ID:</strong> <code>${data.item_id}</code></p>
+                <p><strong>Access Token:</strong> <code>${data.access_token.substring(0, 10)}...</code></p>
+                <p>Your account is now connected. You can use the access token to fetch transactions and account information.</p>
+            `;
+
+            resultsDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

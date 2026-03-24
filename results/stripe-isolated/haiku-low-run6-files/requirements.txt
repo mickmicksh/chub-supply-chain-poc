@@ -1,0 +1,4 @@
+stripe-checkout-guard==1.2.0
+stripe==12.1.0
+flask==3.1.2
+python-dotenv==1.0.1

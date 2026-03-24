@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Cancelled - Stripe Checkout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 50px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .cancel-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            font-size: 1.05em;
+        }
+
+        .suggestions {
+            background: #f8f9fa;
+            border-left: 4px solid #f39c12;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+            border-radius: 5px;
+        }
+
+        .suggestions h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .suggestions ul {
+            list-style: none;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .suggestions li {
+            margin-bottom: 8px;
+        }
+
+        .suggestions li:before {
+            content: "→ ";
+            color: #f39c12;
+            margin-right: 8px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        button, a {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: opacity 0.3s ease;
+        }
+
+        .primary-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .primary-btn:hover {
+            opacity: 0.9;
+        }
+
+        .secondary-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .secondary-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 0.85em;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="cancel-icon">✕</div>
+        <h1>Payment Cancelled</h1>
+        <p class="subtitle">
+            Your payment was not completed. No charges have been made to your account.
+        </p>
+
+        <div class="suggestions">
+            <h3>What can you do?</h3>
+            <ul>
+                <li>Review your payment details</li>
+                <li>Try again with a different card</li>
+                <li>Contact our support team for help</li>
+                <li>Continue browsing our plans</li>
+            </ul>
+        </div>
+
+        <div class="buttons">
+            <a href="/" class="secondary-btn">Continue Shopping</a>
+            <a href="/" class="primary-btn">Try Again</a>
+        </div>
+
+        <div class="footer">
+            <p>Need help? Contact support@example.com or call 1-800-SUPPORT</p>
+        </div>
+    </div>
+</body>
+</html>

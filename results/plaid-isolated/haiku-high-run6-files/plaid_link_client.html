@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background-color: #0066ff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #0052cc;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Connect Your Bank Account</h1>
+        <p>Link your bank account securely using Plaid</p>
+        <button onclick="openPlaidLink()">Connect Bank Account</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:5000/api';
+        const USER_ID = 'user-123'; // Replace with actual user ID
+
+        let linkToken = null;
+
+        /**
+         * Open Plaid Link modal
+         */
+        async function openPlaidLink() {
+            try {
+                // Step 1: Create link token
+                console.log('Creating link token...');
+                showStatus('Creating link token...', 'info');
+
+                const response = await fetch(`${API_BASE}/create-link-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: USER_ID,
+                        client_name: 'My App'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create link token');
+                }
+
+                linkToken = data.link_token;
+                console.log('Link token created:', linkToken);
+
+                // Step 2: Initialize Plaid Link
+                initiatePlaidLink();
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Initialize and open Plaid Link modal
+         */
+        function initiatePlaidLink() {
+            const config = {
+                token: linkToken,
+                onSuccess: handlePlaidSuccess,
+                onExit: handlePlaidExit,
+                onEvent: handlePlaidEvent,
+            };
+
+            Plaid.create(config).open();
+        }
+
+        /**
+         * Handle successful Plaid Link completion
+         */
+        async function handlePlaidSuccess(publicToken, metadata) {
+            try {
+                console.log('User linked account successfully');
+                console.log('Public Token:', publicToken);
+                console.log('Metadata:', metadata);
+
+                showStatus('Exchanging token with your server...', 'info');
+
+                // Step 3: Exchange public token for access token
+                const response = await fetch(`${API_BASE}/exchange-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        public_token: publicToken
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to exchange token');
+                }
+
+                console.log('Token exchange successful');
+                console.log('Access Token:', data.access_token);
+                console.log('Item ID:', data.item_id);
+
+                showStatus(
+                    `✓ Bank account connected successfully! Item ID: ${data.item_id}`,
+                    'success'
+                );
+
+            } catch (error) {
+                console.error('Error exchanging token:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        /**
+         * Handle Plaid Link exit
+         */
+        function handlePlaidExit(error, metadata) {
+            if (error) {
+                console.error('User exited Plaid with error:', error);
+                showStatus(`Error: ${error.display_message || error.message}`, 'error');
+            } else {
+                console.log('User exited Plaid');
+                showStatus('Connection cancelled', 'info');
+            }
+        }
+
+        /**
+         * Handle Plaid Link events
+         */
+        function handlePlaidEvent(eventName, metadata) {
+            console.log(`Plaid event: ${eventName}`, metadata);
+        }
+
+        /**
+         * Display status message
+         */
+        function showStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+    </script>
+</body>
+</html>

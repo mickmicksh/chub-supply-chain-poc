@@ -1,0 +1,10 @@
+node_modules/
+.claude/
+*.tmp
+article.html
+
+# Python env junk inside result artifacts
+**/venv/
+**/.venv/
+**/__pycache__/
+*.pyc

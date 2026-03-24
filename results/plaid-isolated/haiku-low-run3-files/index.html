@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Connect Your Bank Account</h1>
+        <p>Click the button below to securely connect your bank account using Plaid Link.</p>
+
+        <button onclick="initiatePlaidLink()">Connect Bank Account</button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        // Configuration
+        const PLAID_CLIENT_ID = 'YOUR_CLIENT_ID'; // Replace with your client ID
+
+        async function initiatePlaidLink() {
+            try {
+                // Step 1: Create a link token from your backend
+                const response = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'user-' + Date.now(), // Generate a unique user ID
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create link token');
+                }
+
+                const linkToken = data.link_token;
+
+                // Step 2: Initialize Plaid Link with the token
+                const config = {
+                    token: linkToken,
+                    onSuccess: handlePlaidSuccess,
+                    onExit: handlePlaidExit,
+                    onEvent: handlePlaidEvent,
+                };
+
+                Plaid.create(config).open();
+
+            } catch (error) {
+                showStatus('error', `Error: ${error.message}`);
+            }
+        }
+
+        async function handlePlaidSuccess(publicToken, metadata) {
+            try {
+                // Step 3: Exchange the public token for an access token
+                const response = await fetch('/api/exchange-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        public_token: publicToken,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to exchange token');
+                }
+
+                showStatus('success',
+                    `Success! Bank account connected.\nAccess Token: ${data.access_token.substring(0, 20)}...\nItem ID: ${data.item_id}`
+                );
+
+                // You can now use the access_token to fetch account data
+                console.log('Access token received:', data.access_token);
+                console.log('Item ID:', data.item_id);
+
+            } catch (error) {
+                showStatus('error', `Error: ${error.message}`);
+            }
+        }
+
+        function handlePlaidExit(err, metadata) {
+            if (err) {
+                showStatus('error', `Link closed with error: ${err.display_message}`);
+            } else {
+                showStatus('error', 'Link closed without connecting an account');
+            }
+        }
+
+        function handlePlaidEvent(eventName, metadata) {
+            console.log('Plaid event:', eventName, metadata);
+        }
+
+        function showStatus(type, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+        }
+    </script>
+</body>
+</html>

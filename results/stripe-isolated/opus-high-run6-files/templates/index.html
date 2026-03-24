@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Checkout</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 480px; margin: 80px auto; text-align: center; }
+        h1 { color: #333; }
+        .price { font-size: 2rem; color: #635bff; margin: 1rem 0; }
+        button {
+            background: #635bff; color: #fff; border: none; padding: 14px 36px;
+            font-size: 1rem; border-radius: 6px; cursor: pointer;
+        }
+        button:hover { background: #4b45c6; }
+    </style>
+</head>
+<body>
+    <h1>Premium Plan</h1>
+    <p class="price">$20.00</p>
+    <p>One-time payment for lifetime access.</p>
+    <form action="/create-checkout-session" method="POST">
+        <button type="submit">Checkout</button>
+    </form>
+</body>
+</html>

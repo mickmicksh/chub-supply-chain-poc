@@ -1,0 +1,5 @@
+plaid-python==25.1.0
+plaid-link-verify==2.0.1
+flask==2.3.3
+python-dotenv==1.0.0
+requests==2.31.0

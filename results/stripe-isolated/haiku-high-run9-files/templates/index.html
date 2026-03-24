@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Checkout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .product-info {
+            background: #f7f7f7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .product-info h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .product-info p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .features {
+            list-style: none;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .features li {
+            color: #555;
+            font-size: 13px;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .checkout-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .checkout-btn:active {
+            transform: translateY(0);
+        }
+
+        .checkout-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .security-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .security-info svg {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Premium Plan</h1>
+        <p class="subtitle">Upgrade your account to unlock all features</p>
+
+        <div class="error" id="error-message"></div>
+
+        <div class="product-info">
+            <h2>Premium Plan</h2>
+            <p>Get access to all premium features and priority support.</p>
+            <div class="price">$20.00</div>
+            <ul class="features">
+                <li>Unlimited uploads</li>
+                <li>Advanced analytics</li>
+                <li>Priority support</li>
+                <li>Custom domain</li>
+                <li>API access</li>
+            </ul>
+        </div>
+
+        <form id="checkout-form">
+            <button type="submit" class="checkout-btn" id="checkout-btn">
+                Proceed to Checkout
+            </button>
+        </form>
+
+        <div class="security-info">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+            </svg>
+            Secure checkout powered by Stripe
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('checkout-form');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const errorDiv = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            checkoutBtn.disabled = true;
+            checkoutBtn.textContent = 'Processing...';
+            errorDiv.classList.remove('show');
+
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.error || 'An error occurred');
+                }
+
+                // Stripe handles the redirect
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = error.message;
+                errorDiv.classList.add('show');
+                checkoutBtn.disabled = false;
+                checkoutBtn.textContent = 'Proceed to Checkout';
+            }
+        });
+    </script>
+</body>
+</html>

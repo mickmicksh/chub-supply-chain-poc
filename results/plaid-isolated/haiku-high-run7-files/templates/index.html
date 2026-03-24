@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .button {
+            background-color: #007AFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #0051D5;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #D4EDDA;
+            color: #155724;
+            border: 1px solid #C3E6CB;
+        }
+        .error {
+            background-color: #F8D7DA;
+            color: #721C24;
+            border: 1px solid #F5C6CB;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bank Account Connection</h1>
+    <p>Click the button below to connect your bank account securely using Plaid Link.</p>
+
+    <button class="button" onclick="initiatePlaidLink()">Connect Bank Account</button>
+
+    <div id="status"></div>
+
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+
+    <script>
+        async function initiatePlaidLink() {
+            try {
+                // Step 1: Create link token from your backend
+                const linkTokenResponse = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: 'user-123'  // Replace with actual user ID
+                    })
+                });
+
+                const linkTokenData = await linkTokenResponse.json();
+
+                if (!linkTokenData.link_token) {
+                    throw new Error('Failed to create link token');
+                }
+
+                // Step 2: Initialize Plaid Link
+                const handler = Plaid.create({
+                    token: linkTokenData.link_token,
+                    onSuccess: async (public_token, metadata) => {
+                        // Step 3: Exchange public token for access token
+                        const exchangeResponse = await fetch('/api/exchange-token', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                public_token: public_token
+                            })
+                        });
+
+                        const exchangeData = await exchangeResponse.json();
+
+                        if (exchangeData.access_token) {
+                            showStatus('success', `Successfully connected! Account: ${metadata.accounts[0].name}`);
+                            // Save the access token securely on your backend
+                            console.log('Access Token:', exchangeData.access_token);
+                            console.log('Item ID:', exchangeData.item_id);
+                        } else {
+                            showStatus('error', 'Failed to exchange token');
+                        }
+                    },
+                    onExit: (err, metadata) => {
+                        if (err != null) {
+                            showStatus('error', `Plaid Link exited with error: ${err.error_message}`);
+                        } else {
+                            showStatus('error', 'Plaid Link was closed');
+                        }
+                    },
+                    onEvent: (eventName, metadata) => {
+                        console.log('Plaid event:', eventName, metadata);
+                    }
+                });
+
+                handler.open();
+
+            } catch (error) {
+                showStatus('error', `Error: ${error.message}`);
+            }
+        }
+
+        function showStatus(type, message) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+    </script>
+</body>
+</html>

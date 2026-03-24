@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Checkout</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f6f9fc;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 { color: #32325d; margin-bottom: 8px; }
+        .price { font-size: 2rem; color: #6772e5; margin: 16px 0; }
+        p { color: #525f7f; line-height: 1.6; }
+        button {
+            background: #6772e5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 16px;
+            width: 100%;
+        }
+        button:hover { background: #5469d4; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Premium Plan</h1>
+        <div class="price">$20.00</div>
+        <p>Get access to all premium features with a one-time payment.</p>
+        <form action="/create-checkout-session" method="POST">
+            <button type="submit">Checkout</button>
+        </form>
+    </div>
+</body>
+</html>

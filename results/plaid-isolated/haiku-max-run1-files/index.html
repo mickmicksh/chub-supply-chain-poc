@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration</title>
+    <script src="https://cdn.plaid.com/link/v3/stable/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0052a3;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .accounts {
+            margin-top: 20px;
+        }
+        .account {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bank Account Connection</h1>
+        <p>Connect your bank account to get started</p>
+
+        <button id="linkButton">Connect Bank Account</button>
+
+        <div id="status"></div>
+        <div id="accounts" class="accounts"></div>
+    </div>
+
+    <script>
+        const userId = 'user-123'; // In production, get from authenticated session
+
+        // Initialize Plaid Link
+        async function openLink() {
+            try {
+                // Step 1: Get link token from backend
+                const tokenResponse = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: userId }),
+                });
+
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to create link token');
+                }
+
+                const { link_token } = await tokenResponse.json();
+
+                // Step 2: Create Plaid Link handler
+                const handler = Plaid.create({
+                    token: link_token,
+                    onSuccess: (publicToken, metadata) => {
+                        // Step 3: Exchange public token for access token
+                        exchangeToken(publicToken, userId);
+                    },
+                    onExit: (err, metadata) => {
+                        if (err) {
+                            showStatus(`Error: ${err.display_message}`, 'error');
+                        } else {
+                            showStatus('Link closed', 'error');
+                        }
+                    },
+                });
+
+                // Step 4: Open Link
+                handler.open();
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Exchange public token for access token
+        async function exchangeToken(publicToken, userId) {
+            try {
+                const response = await fetch('/api/exchange-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        public_token: publicToken,
+                        user_id: userId,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to exchange token');
+                }
+
+                const data = await response.json();
+                showStatus('Bank account connected successfully!', 'success');
+
+                // Fetch accounts after successful connection
+                await fetchAccounts(userId);
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Fetch and display user's accounts
+        async function fetchAccounts(userId) {
+            try {
+                const response = await fetch(`/api/accounts/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch accounts');
+                }
+
+                const { accounts } = await response.json();
+                displayAccounts(accounts);
+
+            } catch (error) {
+                console.error('Error fetching accounts:', error);
+            }
+        }
+
+        // Display accounts on the page
+        function displayAccounts(accounts) {
+            const accountsDiv = document.getElementById('accounts');
+            accountsDiv.innerHTML = '<h2>Connected Accounts</h2>';
+
+            accounts.forEach(account => {
+                const accountEl = document.createElement('div');
+                accountEl.className = 'account';
+                accountEl.innerHTML = `
+                    <strong>${account.name}</strong><br>
+                    Type: ${account.type} (${account.subtype})<br>
+                    Balance: $${account.balances.current?.toFixed(2) || 'N/A'}<br>
+                    Available: $${account.balances.available?.toFixed(2) || 'N/A'}
+                `;
+                accountsDiv.appendChild(accountEl);
+            });
+        }
+
+        // Show status messages
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+        }
+
+        // Attach click handler to button
+        document.getElementById('linkButton').addEventListener('click', openLink);
+    </script>
+</body>
+</html>

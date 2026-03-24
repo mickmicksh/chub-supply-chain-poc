@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Link Integration Example</title>
+    <script src="https://cdn.plaid.com/link/v3/link-initialize.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        h1 {
+            color: #1f1f1f;
+        }
+        button {
+            background-color: #0066d6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0052a3;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bank Account Connection</h1>
+        <p>Click the button below to securely connect your bank account.</p>
+        <button onclick="initiatePlaidLink()">Connect Bank Account</button>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        async function initiatePlaidLink() {
+            try {
+                // Step 1: Get link token from your backend
+                const tokenResponse = await fetch('/api/create-link-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        client_user_id: 'user-' + Date.now()
+                    })
+                });
+
+                const tokenData = await tokenResponse.json();
+
+                if (!tokenResponse.ok) {
+                    showStatus('Error: ' + (tokenData.error || 'Failed to create link token'), 'error');
+                    return;
+                }
+
+                const linkToken = tokenData.link_token;
+
+                // Step 2: Create Plaid Link handler
+                const handler = Plaid.create({
+                    token: linkToken,
+                    onSuccess: (public_token, metadata) => {
+                        // Step 3: Send public token to backend for exchange
+                        exchangeToken(public_token);
+                    },
+                    onExit: (err, metadata) => {
+                        if (err != null) {
+                            showStatus('User exited Link flow', 'error');
+                        }
+                    },
+                    onEvent: (eventName, metadata) => {
+                        console.log('Plaid event:', eventName, metadata);
+                    }
+                });
+
+                // Step 4: Open Plaid Link
+                handler.open();
+
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function exchangeToken(public_token) {
+            try {
+                const response = await fetch('/api/exchange-token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        public_token: public_token
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showStatus('Error: ' + (data.error || 'Token exchange failed'), 'error');
+                    return;
+                }
+
+                showStatus('Success! Bank account connected. Access token: ' + data.access_token.substring(0, 20) + '...', 'success');
+
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+    </script>
+</body>
+</html>

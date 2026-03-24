@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Checkout</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .product {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+
+        .product-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .product-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .price-period {
+            font-size: 12px;
+            color: #999;
+            margin-left: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f7ff;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .info strong {
+            color: #667eea;
+        }
+
+        .test-cards {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .test-cards p {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .test-cards code {
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Checkout</h1>
+        <p class="subtitle">Complete your purchase with Stripe</p>
+
+        <div class="product">
+            <div class="product-name">Premium Plan</div>
+            <div class="product-description">
+                Unlock all premium features and get priority support
+            </div>
+            <div class="price">
+                $20.00
+                <span class="price-period">one-time</span>
+            </div>
+        </div>
+
+        <form id="checkout-form">
+            <button type="submit" id="checkout-btn">
+                Proceed to Payment
+            </button>
+        </form>
+
+        <div class="info">
+            <strong>Test Mode:</strong> Use test card numbers to test payments.
+            Your card will not be charged.
+        </div>
+
+        <div class="test-cards">
+            <p><strong>Test Cards:</strong></p>
+            <p>✓ Success: <code>4242 4242 4242 4242</code></p>
+            <p>✗ Decline: <code>4000 0000 0000 0002</code></p>
+            <p>⚠️ 3D Secure: <code>4000 0025 0000 3155</code></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('checkout-form');
+        const checkoutBtn = document.getElementById('checkout-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            checkoutBtn.disabled = true;
+            checkoutBtn.textContent = 'Redirecting...';
+
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Payment failed');
+                }
+
+                // The response should be a redirect, which fetch will follow
+                window.location.href = response.url || '/';
+            } catch (error) {
+                alert('Error: ' + error.message);
+                checkoutBtn.disabled = false;
+                checkoutBtn.textContent = 'Proceed to Payment';
+            }
+        });
+    </script>
+</body>
+</html>
