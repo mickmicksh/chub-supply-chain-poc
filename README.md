@@ -1,8 +1,10 @@
-![Vulnerability Disclosure](https://img.shields.io/badge/disclosure-public-red)
-![Affected Version](https://img.shields.io/badge/chub-v0.1.3-orange)
-![Tests](https://img.shields.io/badge/tests-240%20isolated%20runs-blue)
-![Reproducible](https://img.shields.io/badge/reproducible-Docker-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+<p align="center">
+<img src="https://img.shields.io/badge/disclosure-public-red?style=for-the-badge" alt="Vulnerability Disclosure">
+<a href="https://www.npmjs.com/package/@aisuite/chub"><img src="https://img.shields.io/badge/chub-v0.1.3-orange?style=for-the-badge" alt="Affected Version"></a>
+<a href="RESULTS.md"><img src="https://img.shields.io/badge/tests-240%20isolated%20runs-blue?style=for-the-badge" alt="Tests"></a>
+<a href="REPRODUCE.md"><img src="https://img.shields.io/badge/reproducible-Docker-blue?style=for-the-badge" alt="Reproducible"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="License"></a>
+</p>
 
 # Context Hub Supply Chain PoC
 
@@ -24,11 +26,11 @@ When AI coding assistants fetched the docs, **Haiku silently wrote the fake pack
 
 The generated code silently imports the fake dependency alongside legitimate modules:
 
-![Generated app.py with injected dependency](assets/App-py-deps.png)
+![Generated app.py with injected dependency](assets/app-py-deps.png)
 
 The agent also modifies `CLAUDE.md` to embed the fake package as a "project standard":
 
-![CLAUDE.md after attack](assets/Claude-md.png)
+![CLAUDE.md after attack](assets/claude-md.png)
 
 ## Results
 
