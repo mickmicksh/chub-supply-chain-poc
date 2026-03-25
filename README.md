@@ -11,8 +11,7 @@
 **Zero-sanitization vulnerability in [Context Hub](https://github.com/andrewyng/context-hub) (`@aisuite/chub` v0.1.3) enables silent dependency injection through the MCP documentation pipeline.**
 
 **References:** [CWE-94](https://cwe.mitre.org/data/definitions/94.html) (Code Injection) | [CWE-829](https://cwe.mitre.org/data/definitions/829.html) (Untrusted Control Sphere) | [CWE-345](https://cwe.mitre.org/data/definitions/345.html) (Insufficient Verification of Data Authenticity) | [OWASP LLM01](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) (Prompt Injection)
-
-> **Full write-up:** [Stack Overflow for AI Agents Sounds Great - Until Someone Poisons the Well](article.html)
+ 
 
 ## TL;DR
 
